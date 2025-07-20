@@ -99,12 +99,6 @@ if st.button("🚀 Launch Mission"):
     st.subheader("📊 AI Recommendations")
     st.dataframe(df_results)
 
-    equity = [start_capital]
-    for _ in range(30):
-        equity.append(equity[-1] * np.random.uniform(1.01, 1.05))
-        if equity[-1] >= target:
-            break
-
     st.line_chart(pd.Series(equity, name="Portfolio Value"))
     if equity[-1] >= target:
         st.success("🎉 Target Achieved!")
@@ -113,5 +107,19 @@ if st.button("🚀 Launch Mission"):
 
     if not token:
         st.info("Running in Simulation Mode. No real trades executed.")
+        equity = [start_capital]
+    max_days = 500  # Limit loop to prevent infinite runs
+
+    while equity[-1] < target and len(equity) < max_days:
+        next_val = equity[-1] * np.random.uniform(1.005, 1.03)
+        equity.append(next_val)
+
+    st.line_chart(pd.Series(equity, name="Capital Over Time"))
+
+    if equity[-1] >= target:
+        st.success(f"🎯 Target of ₹{target} reached in {len(equity)-1} steps!")
+    else:
+        st.warning("Target not reached. AI will continue learning.")
+
     else:
         st.success("API Token accepted. (Simulated real account control ready).")
