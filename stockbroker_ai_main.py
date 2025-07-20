@@ -104,7 +104,6 @@ if st.button("🚀 Launch Mission"):
         st.success("🎉 Target Achieved!")
     else:
         st.warning("Still in progress... AI will continue.")
-
     if not token:
         st.info("Running in Simulation Mode. No real trades executed.")
         equity = [start_capital]
@@ -113,7 +112,6 @@ if st.button("🚀 Launch Mission"):
     while equity[-1] < target and len(equity) < max_days:
         next_val = equity[-1] * np.random.uniform(1.005, 1.03)
         equity.append(next_val)
-
     st.line_chart(pd.Series(equity, name="Capital Over Time"))
 
     if equity[-1] >= target:
