@@ -118,6 +118,5 @@ if st.button("🚀 Launch Mission"):
         st.success(f"🎯 Target of ₹{target} reached in {len(equity)-1} steps!")
     else:
         st.warning("Target not reached. AI will continue learning.")
-
     else:
         st.success("API Token accepted. (Simulated real account control ready).")
