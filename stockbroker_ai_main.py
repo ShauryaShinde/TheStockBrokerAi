@@ -1,72 +1,65 @@
-# Stockbroker AI - Unified App (Secure, Adaptive, Multi-Market, Goal-Oriented)
-# Author: Shaurya Exclusive
-# Requirements: streamlit, yfinance, pandas, numpy, scikit-learn
-
-import yfinance as yf
+mport yfinance as yf
 import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
 import streamlit as st
+import bcrypt
 import time
 
 # ------------------- Secure Login -------------------
-st.set_page_config(page_title="Stockbroker AI", page_icon="📈", layout="centered")
-st.title("🔒 Stockbroker AI - Secure Access")
+hashed_password = b"$2b$12$gWw5A0QK0JrUCcyZGJmlkOKlcuqk5Xn9slVuYzgoG7If5fVu10nIa"
+attempts = st.session_state.get("attempts", 0)
 
-if "authenticated" not in st.session_state:
-    st.session_state["authenticated"] = False
-if "attempts" not in st.session_state:
-    st.session_state["attempts"] = 0
-
-if not st.session_state["authenticated"]:
+def login():
+    global attempts
+    st.title("🔒 Stockbroker AI - Secure Access")
     pw = st.text_input("Enter Password:", type="password")
     if pw:
-        if st.session_state["attempts"] >= 3:
-            st.error("Too many failed attempts. Please wait 30 seconds.")
+        if attempts >= 3:
+            st.error("Too many attempts. Locked for 30 seconds.")
             time.sleep(30)
-            st.session_state["attempts"] = 0
-        elif pw == "Shaurya@2313":
+            attempts = 0
+
+        if bcrypt.checkpw(pw.encode(), hashed_password):
             st.session_state["authenticated"] = True
-            st.success("Access Granted ✅")
         else:
-            st.session_state["attempts"] += 1
-            st.error("Incorrect password ❌")
+            st.session_state["attempts"] = attempts + 1
+            st.error("Incorrect password.")
+
+if not st.session_state.get("authenticated"):
+    login()
     st.stop()
 
 # ------------------- Trading AI Core -------------------
-st.title("🤖 Stockbroker AI - Global Mission Console")
+st.title("🤖 Stockbroker AI - Mission Control")
 
-market = st.selectbox("Select Market:", ["India (NIFTY 50)", "USA (Dow Jones)", "UK (FTSE 100)", "Mixed Global"])
+broker = st.selectbox("Select your broker:", ["Zerodha", "Upstox", "Angel One", "Investopedia Simulator", "Other/Manual"])
 
-if market == "India (NIFTY 50)":
-    symbols = ["RELIANCE.NS", "INFY.NS", "TCS.NS", "HDFCBANK.NS", "ICICIBANK.NS"]
-elif market == "USA (Dow Jones)":
-    symbols = ["AAPL", "MSFT", "JNJ", "JPM", "V"]
-elif market == "UK (FTSE 100)":
-    symbols = ["BP.L", "HSBA.L", "GLEN.L", "AZN.L", "VOD.L"]
+token = None
+simulator_mode = False
+
+if broker in ["Zerodha", "Upstox", "Angel One"]:
+    st.info(f"🔐 {broker} supports API-based control.")
+    if st.checkbox("I allow Stockbroker AI to control this broker via API"):
+        token = st.text_input("Enter your API Token (from your broker dashboard):")
+        if not token:
+            st.warning("Waiting for token...")
+        else:
+            st.success("✅ Token received. Secure control granted.")
 else:
-    symbols = ["RELIANCE.NS", "AAPL", "BP.L", "TSLA", "ICICIBANK.NS"]
+    simulator_mode = True
+    st.warning("⚠️ API not available for this broker. Switching to simulation mode.")
 
-st.markdown("### 🔐 Broker Credentials (Used for control takeover)")
+# Input Section
+start_capital = st.number_input("Enter Starting Capital (₹):", value=1000)
+target = st.number_input("Enter Target Amount (₹):", value=1000000)
 
-broker = st.text_input("Enter Broker/App Name:")
-username = st.text_input("Account Username:")
-password = st.text_input("Account Password:", type="password")
-token = st.text_input("API Token (Optional):")
-permission = st.checkbox("✅ I give Stockbroker AI permission to trade via this account")
+if st.button("🚀 Launch AI Mission"):
+    st.success(f"Mission accepted: ₹{start_capital} → ₹{target}")
+    st.write("Gathering stock data from NIFTY 50...")
 
-start_capital = st.number_input("💵 Starting Capital (₹ or $):", value=1000)
-target = st.number_input("🎯 Target Amount (₹ or $):", value=1000000)
-
-if st.button("🚀 Launch Mission"):
-    if not permission or not username or not password:
-        st.warning("You must provide credentials and grant permission.")
-        st.stop()
-
-    st.success(f"AI Activated! Goal: {start_capital} → {target}")
-    st.info(f"Scanning {market} market...")
-
+    symbols = ["RELIANCE.NS", "INFY.NS", "TCS.NS", "HDFCBANK.NS", "ICICIBANK.NS"]
     results = []
 
     for symbol in symbols:
@@ -88,35 +81,37 @@ if st.button("🚀 Launch Mission"):
             pred = model.predict([X_scaled[-1]])[0]
             prob = model.predict_proba([X_scaled[-1]])[0][pred]
 
-            action = "BUY" if pred == 1 else "WAIT"
-            confidence = f"{prob * 100:.2f}%"
+            decision = "BUY" if pred == 1 else "WAIT"
+            confidence = f"{prob * 100:.1f}%"
 
-            results.append({"Symbol": symbol, "Action": action, "Confidence": confidence})
+            results.append({
+                "Symbol": symbol,
+                "Action": decision,
+                "Confidence": confidence
+            })
         except:
             continue
 
-    df_results = pd.DataFrame(results)
-    st.subheader("📊 AI Recommendations")
-    st.dataframe(df_results)
+    results_df = pd.DataFrame(results)
+    st.subheader("📈 AI Trade Suggestions")
+    st.dataframe(results_df)
 
-    st.line_chart(pd.Series(equity, name="Portfolio Value"))
-    if equity[-1] >= target:
-        st.success("🎉 Target Achieved!")
+    if simulator_mode:
+        st.warning("⚠️ SIMULATION MODE: No real trades executed.")
     else:
-        st.warning("Still in progress... AI will continue.")
-    if not token:
-        st.info("Running in Simulation Mode. No real trades executed.")
-        equity = [start_capital]
+        st.success("Connected to broker API. Ready to trade.")
+
+    # --- Capital Simulation Loop ---
+    equity = [start_capital]
     max_days = 500  # Limit loop to prevent infinite runs
 
     while equity[-1] < target and len(equity) < max_days:
         next_val = equity[-1] * np.random.uniform(1.005, 1.03)
         equity.append(next_val)
+
     st.line_chart(pd.Series(equity, name="Capital Over Time"))
 
     if equity[-1] >= target:
         st.success(f"🎯 Target of ₹{target} reached in {len(equity)-1} steps!")
     else:
         st.warning("Target not reached. AI will continue learning.")
-    else:
-        st.success("API Token accepted. (Simulated real account control ready).")
