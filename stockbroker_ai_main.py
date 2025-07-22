@@ -1,5 +1,5 @@
-# Stockbroker AI - Secure Trading App
-
+# Stockbroker AI - 
+Secure Trading App with Dual-Market Support
 import streamlit as st
 import yfinance as yf
 import pandas as pd
@@ -12,7 +12,6 @@ import time
 # ----------------- Secure Login (Custom for YOU) -----------------
 
 YOUR_PLAIN_PASSWORD = "Shaurya@2313"
-
 hashed_backup_password = b"$2b$12$gWw5A0QK0JrUCcyZGJmlkOKlcuqk5Xn9slVuYzgoG7If5fVu10nIa"
 
 if "attempts" not in st.session_state:
@@ -48,6 +47,13 @@ if not st.session_state.get("authenticated"):
 
 st.title("🤖 Stockbroker AI - Mission Control")
 
+market = st.selectbox("Select Market:", ["India (NIFTY 50)", "USA (Dow Jones)"])
+
+if market == "India (NIFTY 50)":
+    symbols = ["RELIANCE.NS", "INFY.NS", "TCS.NS", "HDFCBANK.NS", "ICICIBANK.NS"]
+else:
+    symbols = ["AAPL", "MSFT", "GOOGL", "AMZN", "JPM"]
+
 broker = st.selectbox("Select your broker:", ["Zerodha", "Upstox", "Angel One", "Investopedia Simulator", "Other/Manual"])
 
 token = None
@@ -56,7 +62,9 @@ simulator_mode = False
 if broker in ["Zerodha", "Upstox", "Angel One"]:
     st.info(f"🔐 {broker} supports API-based control.")
     if st.checkbox("I allow Stockbroker AI to control this broker via API"):
-        token = st.text_input("Enter your API Token (from your broker dashboard):")
+        username = st.text_input("Enter your Broker Username:")
+        password = st.text_input("Enter your Broker Password:", type="password")
+        token = st.text_input("Enter your API Token:")
         if token:
             st.success("✅ Token received. Secure control granted.")
         else:
@@ -65,16 +73,13 @@ else:
     simulator_mode = True
     st.warning("⚠️ API not available. Running in simulator mode only.")
 
-# ----------------- User Mission -----------------
-
 start_capital = st.number_input("Enter Starting Capital (₹):", value=1000)
 target = st.number_input("Enter Target Capital (₹):", value=100000)
 
 if st.button("🚀 Launch AI Mission"):
     st.success(f"Mission: ₹{start_capital} → ₹{target}")
-    st.write("📡 Collecting data from NIFTY 50 stocks...")
+    st.write("📡 Collecting data from selected market...")
 
-    symbols = ["RELIANCE.NS", "INFY.NS", "TCS.NS", "HDFCBANK.NS", "ICICIBANK.NS"]
     results = []
 
     for symbol in symbols:
@@ -115,15 +120,17 @@ if st.button("🚀 Launch AI Mission"):
     else:
         st.success("📡 Live API connection ready. Executing trades (simulated).")
 
-    st.write("📈 Tracking progress over the market day...")
+    st.write("📈 Tracking progress until target is achieved...")
     equity = [start_capital]
-    for _ in range(300):  # Simulating full market session
-        equity.append(equity[-1] * np.random.uniform(1.01, 1.03))  # Simulate small growth
-        if equity[-1] >= target:
-            break
+    steps = 0
+    while equity[-1] < target:
+        equity.append(equity[-1] * np.random.uniform(1.01, 1.03))
+        steps += 1
+        if steps > 10000:
+            break  # safety cap to prevent infinite runaway loop
 
     st.line_chart(pd.Series(equity, name="Equity Over Time"))
     if equity[-1] >= target:
-        st.success(f"🎯 Goal of ₹{target} achieved in {len(equity)-1} steps!")
+        st.success(f"🎯 Goal of ₹{target} achieved in {steps} steps!")
     else:
-        st.warning("Target not reached yet. AI will continue learning tomorrow.")
+        st.warning("Target not reached. AI paused to prevent runaway loop.")
