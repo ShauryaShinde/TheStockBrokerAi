@@ -7,29 +7,36 @@ import streamlit as st
 import bcrypt
 import time
 # ------------------- Secure Login -------------------
-hashed_password = b"$2b$12$gWw5A0QK0JrUCcyZGJmlkOKlcuqk5Xn9slVuYzgoG7If5fVu10nIa"
+hashed_backup_password = b"$2b$12$gWw5A0QK0JrUCcyZGJmlkOKlcuqk5Xn9slVuYzgoG7If5fVu10nIa"
+
 attempts = st.session_state.get("attempts", 0)
 
 def login():
     global attempts
     st.title("🔒 Stockbroker AI - Secure Access")
     pw = st.text_input("Enter Password:", type="password")
+
     if pw:
         if attempts >= 3:
-            st.error("Too many attempts. Locked for 30 seconds.")
+            st.error("Too many failed attempts. Please wait 30 seconds.")
             time.sleep(30)
-            attempts = 0
+            st.session_state["attempts"] = 0
+            st.stop()
 
-        if bcrypt.checkpw(pw.encode(), hashed_password):
+        if pw == YOUR_PLAIN_PASSWORD:
+            st.success("Welcome! Access granted.")
+            st.session_state["authenticated"] = True
+        elif bcrypt.checkpw(pw.encode(), hashed_backup_password):
+            st.success("Access granted via hash.")
             st.session_state["authenticated"] = True
         else:
             st.session_state["attempts"] = attempts + 1
             st.error("Incorrect password.")
+            st.stop()
 
 if not st.session_state.get("authenticated"):
     login()
     st.stop()
-
 # ------------------- Trading AI Core -------------------
 st.title("🤖 Stockbroker AI - Mission Control")
 
