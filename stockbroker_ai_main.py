@@ -1,4 +1,11 @@
-
+import yfinance as yf
+import pandas as pd
+import numpy as np
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import StandardScaler
+import streamlit as st
+import bcrypt
+import time
 # ------------------- Secure Login -------------------
 hashed_password = b"$2b$12$gWw5A0QK0JrUCcyZGJmlkOKlcuqk5Xn9slVuYzgoG7If5fVu10nIa"
 attempts = st.session_state.get("attempts", 0)
