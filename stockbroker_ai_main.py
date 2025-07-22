@@ -11,10 +11,8 @@ import time
 
 # ----------------- Secure Login (Custom for YOU) -----------------
 
-# Your real password (only you can use this)
 YOUR_PLAIN_PASSWORD = "Shaurya@2313"
 
-# Backup hashed password (for future use if needed)
 hashed_backup_password = b"$2b$12$gWw5A0QK0JrUCcyZGJmlkOKlcuqk5Xn9slVuYzgoG7If5fVu10nIa"
 
 if "attempts" not in st.session_state:
