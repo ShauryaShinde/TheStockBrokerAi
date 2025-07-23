@@ -1,5 +1,4 @@
-# Stockbroker AI - 
-Secure Trading App with Dual-Market Support
+# Stockbroker AI - Secure Trading App with Dual-Market Support
 import streamlit as st
 import yfinance as yf
 import pandas as pd
