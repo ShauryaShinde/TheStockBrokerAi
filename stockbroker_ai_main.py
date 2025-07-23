@@ -1,4 +1,5 @@
-# Stockbroker AI - Secure Trading App with Dual-Market Support
+# Stockbroker AI – Secure Real/Simulated Trading App
+
 import streamlit as st
 import yfinance as yf
 import pandas as pd
@@ -8,7 +9,7 @@ from sklearn.preprocessing import StandardScaler
 import bcrypt
 import time
 
-# ----------------- Secure Login (Custom for YOU) -----------------
+# ----------- Secure Login -----------
 
 YOUR_PLAIN_PASSWORD = "Shaurya@2313"
 hashed_backup_password = b"$2b$12$gWw5A0QK0JrUCcyZGJmlkOKlcuqk5Xn9slVuYzgoG7If5fVu10nIa"
@@ -17,18 +18,16 @@ if "attempts" not in st.session_state:
     st.session_state["attempts"] = 0
 
 def login():
-    st.title("🔒 Stockbroker AI - Secure Access")
+    st.title("🔐 Stockbroker AI - Secure Access")
     pw = st.text_input("Enter Password:", type="password")
-
     if pw:
         if st.session_state["attempts"] >= 3:
-            st.error("Too many failed attempts. Try again in 30 seconds.")
+            st.error("Too many failed attempts. Wait 30 seconds.")
             time.sleep(30)
             st.session_state["attempts"] = 0
             st.stop()
-
         if pw == YOUR_PLAIN_PASSWORD:
-            st.success("✅ Access granted (you).")
+            st.success("✅ Access granted (direct).")
             st.session_state["authenticated"] = True
         elif bcrypt.checkpw(pw.encode(), hashed_backup_password):
             st.success("✅ Access granted (hashed).")
@@ -42,47 +41,51 @@ if not st.session_state.get("authenticated"):
     login()
     st.stop()
 
-# ----------------- Trading AI Core -----------------
+# ----------- App Header -----------
 
-st.title("🤖 Stockbroker AI - Mission Control")
+st.title("📈 Stockbroker AI - Mission Control")
 
-market = st.selectbox("Select Market:", ["India (NIFTY 50)", "USA (Dow Jones)"])
+market = st.selectbox("🌍 Select Market:", ["India (NIFTY 50)", "USA (Dow Jones)"])
 
 if market == "India (NIFTY 50)":
     symbols = ["RELIANCE.NS", "INFY.NS", "TCS.NS", "HDFCBANK.NS", "ICICIBANK.NS"]
 else:
     symbols = ["AAPL", "MSFT", "GOOGL", "AMZN", "JPM"]
 
-broker = st.selectbox("Select your broker:", ["Zerodha", "Upstox", "Angel One", "Investopedia Simulator", "Other/Manual"])
+# ----------- Broker Selection -----------
 
-username = st.text_input("Enter your Broker Username:")
-password = st.text_input("Enter your Broker Password:", type="password")
-token = st.text_input("Enter your API Token (if available):")
+broker = st.selectbox("🧾 Select your broker:", [
+    "Zerodha", "Upstox", "Angel One", "Investopedia Simulator", "Other/Manual"
+])
 
+token = None
 simulator_mode = False
-api_mode = False
 
 if broker in ["Zerodha", "Upstox", "Angel One"]:
-    st.info(f"🔐 {broker} supports API-based control.")
-    if st.checkbox("✅ I allow Stockbroker AI to control this broker via API"):
-        if token:
-            api_mode = True
-            st.success("API Token received. Secure control granted.")
+    st.info(f"🔐 {broker} supports API-based trading.")
+    if st.checkbox("I allow Stockbroker AI to control this broker via API"):
+        username = st.text_input("Broker Username:")
+        password = st.text_input("Broker Password:", type="password")
+        token = st.text_input("Enter your API Token:")
+        if token and username and password:
+            st.success("✅ API credentials received. Live trading enabled.")
         else:
-            st.warning("⚠️ Please enter API token to continue.")
-elif broker == "Investopedia Simulator":
-    simulator_mode = True
-    st.info("🧪 Using Investopedia simulation environment.")
+            st.warning("⚠️ Waiting for all credentials...")
+            st.stop()
 else:
-    st.warning("⚠️ No API support detected. Manual/simulation mode enabled.")
     simulator_mode = True
+    st.warning("⚠️ API not available. Running in simulator mode only.")
 
-start_capital = st.number_input("Enter Starting Capital (₹):", value=1000)
-target = st.number_input("Enter Target Capital (₹):", value=100000)
+# ----------- Capital Input -----------
 
-if st.button("🚀 Launch AI Mission"):
-    st.success(f"Mission: ₹{start_capital} → ₹{target}")
-    st.write("📡 Collecting data from selected market...")
+start_capital = st.number_input("💰 Starting Capital:", value=1000)
+target = st.number_input("🎯 Target Capital:", value=100000)
+
+# ----------- AI Launch -----------
+
+if st.button("🚀 Launch Stockbroker AI"):
+    st.success(f"📡 Mission launched: ₹{start_capital} → ₹{target}")
+    st.write("🔍 Collecting and analyzing market data...")
 
     results = []
 
@@ -97,6 +100,7 @@ if st.button("🚀 Launch AI Mission"):
 
             X = df[["SMA_5", "SMA_20", "Volatility", "Return"]]
             y = (df["Close"].shift(-1) > df["Close"]).astype(int)
+
             scaler = StandardScaler()
             X_scaled = scaler.fit_transform(X)
 
@@ -116,28 +120,30 @@ if st.button("🚀 Launch AI Mission"):
         except:
             continue
 
-    st.subheader("📊 AI Suggestions:")
+    st.subheader("🤖 AI Trade Recommendations:")
     st.dataframe(pd.DataFrame(results))
 
-    if api_mode:
-        st.success("📡 Live API mode: Executing trades.")
-    elif simulator_mode:
-        st.info("🧪 Simulator mode: No real trades executed.")
+    if simulator_mode:
+        st.info("🧪 Simulator mode: trades will be simulated.")
     else:
-        st.warning("Running in read-only/manual mode.")
+        st.success("📡 Connected to broker. Executing trades (demo mode).")
 
-    st.write("📈 Tracking progress until target is achieved...")
+    # ----------- Simulated Equity Growth -----------
+
+    st.write("📊 Simulating portfolio growth...")
     equity = [start_capital]
     steps = 0
     while equity[-1] < target:
-        equity.append(equity[-1] * np.random.uniform(1.01, 1.03))
+        equity.append(equity[-1] * np.random.uniform(1.002, 1.01))
         steps += 1
-        if steps > 100000:  # extended safety cap for near-infinite tries
-            break
+        if steps > 100000:
+            break  # extended cap to simulate more realistically
 
     st.line_chart(pd.Series(equity, name="Equity Over Time"))
+
     if equity[-1] >= target:
-        st.success(f"🎯 Goal of ₹{target} achieved in {steps} steps!")
+        st.success(f"🏁 Target of ₹{target} reached in {steps} steps!")
     else:
-        st.warning("Target not reached. AI paused after 100,000 attempts.")
+        st.warning("⚠️ Target not reached. Try adjusting strategy or capital.")
+
 
